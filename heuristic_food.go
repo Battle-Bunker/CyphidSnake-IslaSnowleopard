@@ -1,40 +1,40 @@
 package main
 
 import (
+	"math"
+
 	"github.com/Battle-Bunker/cyphid-snake/agent"
 	"github.com/BattlesnakeOfficial/rules"
 )
 
-// HeuristicFoodCollection calculates a score based on the amount of food collected and proximity to next food
-func HeuristicFoodCollection(snapshot agent.GameSnapshot) float64 {
+// HeuristicAvoidSnakes calculates a score that rewards positions farther from other snakes
+func HeuristicAvoidSnakes(snapshot agent.GameSnapshot) float64 {
 	var totalScore float64
+	allSnakes := snapshot.Snakes()
 
 	for _, allySnake := range snapshot.YourTeam() {
-		// Score based on food eaten (snake length - initial length)
-		foodEaten := allySnake.Length() - 3 // Assuming initial length is 3
-		foodScore := float64(foodEaten) * 10 // Weight food eaten more heavily
+		head := allySnake.Head()
+		snakeScore := 0.0
 
-		// Score based on proximity to next food
-		snakeHead := allySnake.Head()
-		closestFoodDistance := float64(snapshot.Width() + snapshot.Height()) // Initialize with max possible distance
+		for _, otherSnake := range allSnakes {
+			if otherSnake.ID() == allySnake.ID() {
+				continue // Skip self
+			}
 
-		for _, food := range snapshot.Food() {
-			distance := manhattanDistance(snakeHead, food)
-			if float64(distance) < closestFoodDistance {
-				closestFoodDistance = float64(distance)
+			for _, bodyPart := range otherSnake.Body() {
+				distance := manhattanDistance(head, bodyPart)
+
+				// Add to score based on distance. Closer snakes have more impact.
+				snakeScore += 1.0 / math.Max(float64(distance), 1.0)
 			}
 		}
 
-		// Invert the distance so that closer food gives a higher score
-		// Add 1 to avoid division by zero and to give a bonus for being on food
-		proximityScore := 1.0 / (closestFoodDistance + 1.0)
-
-		// Combine food eaten score and proximity score
-		snakeScore := foodScore + proximityScore
+		// Invert the score so that being far from snakes gives a higher score
+		snakeScore = 1.0 / (snakeScore + 1.0)
 		totalScore += snakeScore
 	}
 
-	return totalScore * 100 // Scale the score for better differentiation
+	return totalScore * 1000 // Scale the score for better differentiation
 }
 
 // manhattanDistance calculates the Manhattan distance between two points
