@@ -11,7 +11,7 @@ func main() {
 	metadata := client.SnakeMetadataResponse{
 		APIVersion: "1",
 		Author:     "",
-		Color:      "#888888",
+		Color:      "#FFD700",
 		Head:       "default",
 		Tail:       "default",
 	}
